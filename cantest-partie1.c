@@ -22,15 +22,10 @@ struct can_frame frame;
 
 
 int canTransmit(const char *message, int longueur);
-int canReceive(void);
 
 
 int main(int argc, char **argv)
 {
-    
-
-	pid_t pid;
-    char buf;
 
     unsigned char toucheLue = 'N';
 
@@ -75,68 +70,68 @@ int main(int argc, char **argv)
 		return -1;
 	}
     
-    struct can_filter rfilter[1]; // filtres pour 2 ID
-
-    rfilter[0].can_id   = 0x903; 
-	rfilter[0].can_mask = 0xFFF;
-	rfilter[1].can_id   = 0x480;
-	rfilter[1].can_mask = 0xFF0;
 
 
-	setsockopt(fdSocketCAN, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+    printf("Tapez:\n\r");
+    printf("1: Pour Envoyer \"Salut\"\n");
+    printf("2: Pour Envoyer \"Bonjour\"\n");
+    printf("3: Pour Envoyer \"de\"\n");
+    printf("4: Pour Envoyer \"la\"\n");
+    printf("5: Pour Envoyer \"part\"\n");
+    printf("6: Pour Envoyer \"Felix\"\n");
+    printf("\n\r");
 
-
-
-    /*  Creation de deux processus  */
-
-    pid = fork();
-    if (pid == -1) { // Une erreur s'est produite
-        perror("fork");
-        return -1;
-    }
-
-    if (pid == 0) { // Code exécuté par le processus enfant
-        while(1)
+    while(toucheLue != 'Q')
+    {
+        toucheLue = getchar();
+        switch(toucheLue)
         {
-            canReceive();
+            case '1':
+                if(canTransmit("Salut", 5) < 0)
+                {
+                    break;
+                }
+            break;
+
+            case '2':
+                if(canTransmit("Bonjour", 7) < 0)
+                {
+                    break;
+                }
+            break;
+
+            case '3':
+                if(canTransmit("de", 2) < 0)
+                {
+                    break;
+                }
+            break;
+
+            case '4':
+                if(canTransmit("la", 2) < 0)
+                {
+                    break;
+                }
+            break;
+
+            case '5':
+                if(canTransmit("part", 4) < 0)
+                {
+                    break;
+                }
+            break;
+
+            case '6':
+                if(canTransmit("Felix", 5) < 0)
+                {
+                    break;
+                }
+            break;
+
+            default:
+            break;
         }
-        printf("Fin du processus enfant\n");
-    } 
-    else 
-    {  // Code exécuté par le processus parent
-        printf("Tapez:\n\r");
-        printf("1: Pour Envoyer \" Salut\"\n");
-        printf("2: Pour Envoyer \" Bonjour\"\n");
-        printf("3: Pour Envoyer \" Felix\"\n");
-        printf("\n\r");
-
-        while(1)
-        {
-            toucheLue = getchar();
-            switch(toucheLue)
-            {
-                case '1':
-                    canTransmit("Salut", 5);
-                break;
-
-                case '2':
-                    canTransmit("Bonjour", 7);
-                break;
-
-                case '3':
-                    canTransmit("Felix", 5);
-                break;
-
-                default:
-                break;
-            }
-            toucheLue = 'N';
-        }
-        printf("Fin du processus pere\n");
-
-
-
-        wait(NULL);        // Attendre la fin du processus enfant
+        toucheLue = 'N';
     }
 
 
@@ -151,7 +146,7 @@ int main(int argc, char **argv)
 
 
 
-int canTransmit(const char *message, int longueur)
+int canTransmit( const char *message, int longueur)
 {
 	/*
 	Envoyer une trame CAN, initialiser une structure can_frame et la remplir avec des données. 
@@ -159,34 +154,11 @@ int canTransmit(const char *message, int longueur)
 	*/
 	frame.can_id = 0x903;  	// identifiant CAN, exemple: 247 = 0x0F7
 	frame.can_dlc = longueur;		// nombre d'octets de données
-	sprintf(frame.data, message);  // données 
-    printf("Message CAN Transmis par le père: %C\n", message);
+	sprintf(frame.data, "%s", message);  // données 
+    printf("Message CAN Transmis par le père: %s\n\r", message);
 
 	if (write(fdSocketCAN, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
 		perror("Write");
 		return -1;
 	}
-}
-
-
-int canReceive(void)
-{
-    int nbytes, i;
-
-    nbytes = read(fdSocketCAN, &frame, sizeof(struct can_frame));
-
-	if (nbytes < 0) {
-		perror("Read");
-		return -1;
-	}
-
-	printf("0x%03X [%d] ",frame.can_id, frame.can_dlc);
-
-	for (i = 0; i < frame.can_dlc; i++)
-		printf("%c ",frame.data[i]);
-        //      %02X
-
-
-	printf("\r\n");
-
 }

@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 	rfilter[1].can_mask = 0xFF0;
 	*/
 
-	rfilter[0].can_id   = 0x0F7; 
+	rfilter[0].can_id   = 0x903; 
 	rfilter[0].can_mask = 0xFFF;
 	rfilter[1].can_id   = 0x480;
 	rfilter[1].can_mask = 0xFF0;
@@ -61,19 +61,23 @@ int main(int argc, char **argv)
 
 	setsockopt(fdSocketCAN, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
 
-	nbytes = read(fdSocketCAN, &frame, sizeof(struct can_frame));
+	while(1)
+	{
+		nbytes = read(fdSocketCAN, &frame, sizeof(struct can_frame));
 
-	if (nbytes < 0) {
-		perror("Read");
-		return -1;
+		if (nbytes < 0) {
+			perror("Read");
+			return -1;
+		}
+
+		printf("0x%03X [%d] ",frame.can_id, frame.can_dlc);
+
+		for (i = 0; i < frame.can_dlc; i++)
+			printf("%c ",frame.data[i]);
+			// %02X
+		printf("\r\n");
 	}
-
-	printf("0x%03X [%d] ",frame.can_id, frame.can_dlc);
-
-	for (i = 0; i < frame.can_dlc; i++)
-		printf("%02X ",frame.data[i]);
-
-	printf("\r\n");
+	
 
 	if (close(fdSocketCAN) < 0) {
 		perror("Close");
